@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml" />
+
+    <!--设置上下文名称,用于区分不同应用程序的记录。一旦设置不能修改, 可以通过%contextName来打印日志上下文名称 -->
+    <contextName>kafka-log-test</contextName>
+    <!-- 定义日志的根目录 -->
+    <property name="logDir" value="/Users/lzy/tools/elk/logs" />
+    <!-- 定义日志文件名称 -->
+    <property name="logName" value="kafkaLog"></property>
+
+
+    <!-- ConsoleAppender 表示控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- 日志输出格式： %d表示日期时间， %thread表示线程名， %-5level：级别从左显示5个字符宽度, %logger{50}
+            表示logger名字最长50个字符，否则按照句点分割。 %msg：日志消息， %n是换行符 -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %contextName [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 异常错误日志记录到文件  -->
+    <appender name="logfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- <Encoding>UTF-8</Encoding> -->
+        <File>${logDir}/${logName}.log</File>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>${logDir}/history/${myspringboottest_log}.%d{yyyy-MM-dd}.rar</FileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %contextName [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+    <appender name="kafkaAppender" class="com.github.danielwegener.logback.kafka.KafkaAppender">
+        <encoder>
+            <pattern>${module} | %d | %-5level| %logger{15} - %msg</pattern>
+            <!--<layout class="net.logstash.logback.layout.LogstashLayout" >
+                <includeContext>false</includeContext>
+                <includeCallerData>true</includeCallerData>
+                <customFields>{"system":"kafka-log-test"}</customFields>
+                <fieldNames class="net.logstash.logback.fieldnames.ShortenedFieldNames"/>
+            </layout>
+            <charset>UTF-8</charset>-->
+        </encoder>
+        <!--kafka topic 需要与配置文件里面的topic一致 否则kafka会沉默并鄙视你-->
+        <topic>logger-channel</topic>
+        <keyingStrategy class="com.github.danielwegener.logback.kafka.keying.HostNameKeyingStrategy" />
+        <deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy" />
+        <producerConfig>bootstrap.servers=127.0.0.1:9092</producerConfig>
+
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="logfile"/>
+        <appender-ref ref="kafkaAppender" />
+    </root>
+
+</configuration>
